@@ -10,8 +10,15 @@ apply plugin: 'maven-publish'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 
-sourceCompatibility = 1.8
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 defaultTasks 'clean','build'
+
+group = 'com.github.kdebisschop'
+
 ext.rundeckPluginVersion = '1.2'
 ext.pluginClassNames='com.bioraft.rundeck.nexus.Nexus3OptionProvider'
 ext.pluginName = 'Nexus3 Option Values Porvider'
@@ -54,7 +61,7 @@ configurations{
 }
 
 dependencies {
-    implementation 'org.rundeck:rundeck-core:3.0.+'
+    implementation 'org.rundeck:rundeck-core:3.2.0-20191218'
 
     testImplementation group: 'junit', name: 'junit', version:'4.12'
 
