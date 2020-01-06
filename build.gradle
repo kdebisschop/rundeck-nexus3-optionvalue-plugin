@@ -1,9 +1,12 @@
 plugins {
-    id 'pl.allegro.tech.build.axion-release' version '1.10.1'
-    id 'java'
+    id 'pl.allegro.tech.build.axion-release' version '1.10.3'
+    id 'com.github.johnrengelman.shadow' version '5.2.0'
+    id('java')
+    id('maven-publish')
 }
 
 apply plugin: 'java'
+apply plugin: 'maven-publish'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 
@@ -17,12 +20,15 @@ ext.pluginDescription = 'Fetches and filters assests from a Nexus3 repository'
 scmVersion {
     ignoreUncommittedChanges = true
     tag {
+        // Ignore tags that begin with <prefix><versionSeparator>, include all tags
+        // if prefix is empty.
         prefix = ''
         versionSeparator = ''
-        def origDeserialize=deserialize
+
         // Append .0 to satisfy SemVer if the tag version is only X.Y
+        def origDeserialize = deserialize
         deserialize = { config, position, tagName ->
-            def orig = origDeserialize(config, position, tagName)
+            String orig = origDeserialize(config, position, tagName)
             if (orig.split('\\.').length < 3) {
                 orig += ".0"
             }
@@ -85,6 +91,32 @@ jar {
 
     }
     dependsOn(copyToLib)
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+}
+
+task javadocJar(type: Jar) {
+    from javadoc.destinationDir
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/kdebisschop/rancher-java-sdk")
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.key") ?: System.getenv("PASSWORD")
+            }
+        }
+    }
+    publications {
+        gpr(MavenPublication) {
+            from(components.java)
+        }
+    }
 }
 
 wrapper {
