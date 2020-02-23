@@ -53,8 +53,9 @@ scmVersion {
 
         // Append .0 to satisfy SemVer if the tag version is only X.Y
         def origDeserialize = deserialize
+        def orig
         deserialize = { config, position, tagName ->
-            String orig = origDeserialize(config, position, tagName)
+            orig = origDeserialize(config, position, tagName)
             if (orig.split('\\.').length < 3) {
                 orig += ".0"
             }
@@ -146,5 +147,5 @@ publishing {
 }
 
 wrapper {
-    gradleVersion = '6.1'
+    gradleVersion = '6.2'
 }
