@@ -1,8 +1,27 @@
 plugins {
     id 'pl.allegro.tech.build.axion-release' version '1.10.3'
     id 'com.github.johnrengelman.shadow' version '5.2.0'
-    id('java')
-    id('maven-publish')
+    id "org.sonarqube" version "2.8"
+    id 'jacoco'
+    id 'java'
+    id 'maven-publish'
+}
+
+sonarqube {
+    properties {
+        property "sonar.projectKey", "kdebisschop_rundeck-conditional-logic-plugin"
+        property "sonar.organization", "kdebisschop"
+        property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.login", "807fd8589d7244bd324b5fecdfca9614d8a40c8c"
+    }
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        csv.enabled false
+        html.destination file("${buildDir}/jacocoHtml")
+    }
 }
 
 apply plugin: 'java'
@@ -34,8 +53,9 @@ scmVersion {
 
         // Append .0 to satisfy SemVer if the tag version is only X.Y
         def origDeserialize = deserialize
+        def orig
         deserialize = { config, position, tagName ->
-            String orig = origDeserialize(config, position, tagName)
+            orig = origDeserialize(config, position, tagName)
             if (orig.split('\\.').length < 3) {
                 orig += ".0"
             }
@@ -127,5 +147,5 @@ publishing {
 }
 
 wrapper {
-    gradleVersion = '6.0.1'
+    gradleVersion = '6.2'
 }
