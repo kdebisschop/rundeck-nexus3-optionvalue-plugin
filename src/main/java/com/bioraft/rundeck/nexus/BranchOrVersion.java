@@ -86,10 +86,6 @@ public class BranchOrVersion {
 		return Arrays.asList(parts).iterator();
 	}
 
-	public int size() {
-		return parts.length;
-	}
-
 	/**
 	 * Consider a component version to be anything with 2 consecutive integer parts.
 	 * Anything else is considered to be a branch.
@@ -109,19 +105,23 @@ public class BranchOrVersion {
 		BranchOrVersion that = (BranchOrVersion) other;
 		CompareToBuilder comparator = new CompareToBuilder();
 		Iterator<String> thatIterator = that.getIterator();
-		if (this.size() == 0 && that.size() == 0) {
-			return 0;
-		}
 		Iterator<String> thisIterator = getIterator();
 		while (thatIterator.hasNext()) {
 			if (!thisIterator.hasNext()) {
-				break;
+				if (comparator.toComparison() == 0) {
+					return -1;
+				} else {
+					break;
+				}
 			}
 			String thisOne = thisIterator.next();
 			String thatOne = thatIterator.next();
 			comparator.append(partOne(thisOne), partOne(thatOne));
 			comparator.append(partTwo(thisOne), partTwo(thatOne));
 			comparator.append(partThree(thisOne), partThree(thatOne));
+		}
+		if (comparator.toComparison() == 0 && thisIterator.hasNext()) {
+			return 1;
 		}
 		comparator.append(partOne(this.build), partOne(that.build));
 		comparator.append(partTwo(this.build), partTwo(that.build));
