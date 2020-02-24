@@ -25,12 +25,8 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import okhttp3.Credentials;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
+import okhttp3.*;
 import okhttp3.Request.Builder;
-import okhttp3.Response;
 
 /**
  * Expands three-part semantic versions to handle cases where there are more
@@ -190,14 +186,20 @@ public class OptionProviderImpl {
 		try {
 			response = client.newCall(request).execute();
 		} catch (IOException e) {
-			return null;
+			return new ArrayList<>();
 		}
 		String json;
 		try {
-			assert response.body() != null;
-			json = response.body().string();
-		} catch (IOException e) {
-			return null;
+			ResponseBody body = response.body();
+			if (body == null) {
+				return new ArrayList<>();
+			}
+			json = body.string();
+			if (json.length() == 0) {
+				return new ArrayList<>();
+			}
+		} catch (IOException  e) {
+			return new ArrayList<>();
 		}
 		ObjectMapper objectMapper = new ObjectMapper();
 		JsonNode tree;
@@ -214,8 +216,9 @@ public class OptionProviderImpl {
 			String token = tree.path("continuationToken").asText();
 			if (token.length() > 0) {
 				ArrayList<String> nextItems = nexusSearch(token);
-				assert nextItems != null;
-				itemList.addAll(nextItems);
+				if (nextItems != null) {
+					itemList.addAll(nextItems);
+				}
 			}
 		}
 
@@ -249,7 +252,7 @@ public class OptionProviderImpl {
 	}
 
 	/**
-	 * Provides the primary means of adding artifacts to the list of OptiionValues
+	 * Provides the primary means of adding artifacts to the list of OptionValues
 	 */
 	static class DockerImageOptionValue implements OptionValue {
 		String name;

@@ -72,11 +72,62 @@ public class Nexus3OptionProviderTest {
 						{ "endpointPath", "/service/rest/v1/search/assets" }, { "repository", "docker" },
 						{ "componentName", "*" }, { "componentVersion", "*" } })
 				.collect(Collectors.toMap(data -> data[0], data -> data[1]));
-		when(client.newCall(any())).thenReturn(call);
 	}
 
 	@Test
-	public void showMessageIfNotConfigured() throws IOException, StepException {
+	public void testConstructor() {
+		Nexus3OptionProviderTest subject = new Nexus3OptionProviderTest();
+		assertNotNull(subject);
+	}
+
+	@Test
+	public void testConstructor2() {
+		OptionProviderImpl subject = new OptionProviderImpl();
+		assertNotNull(subject);
+	}
+
+	@Test
+	public void testAuthHeader() {
+		when(client.newCall(any())).thenReturn(call);
+		OptionProviderImpl subject = new OptionProviderImpl();
+		configuration.put("user", "user");
+		configuration.put("password", "password");
+		List<OptionValue> options = subject.getOptionValues(configuration);
+		assertNotNull(options);
+	}
+
+	@Test
+	public void clientCallThrowsException()  throws IOException {
+		when(client.newCall(any())).thenReturn(call);
+		when(call.execute()).thenThrow(new IOException());
+		Nexus3OptionProvider provider = new Nexus3OptionProvider(client);
+		List<OptionValue> options = provider.getOptionValues(configuration);
+		assertEquals(0, options.size());
+	}
+
+	@Test
+	public void BadJsonFailedClientCall()  throws IOException {
+		when(client.newCall(any())).thenReturn(call);
+		String json = "{\"items\":[{\"path\": \"v2/COMP_NAME/manifests/sprint-11_4\"},],},";
+		when(call.execute()).thenReturn(response(json));
+		Nexus3OptionProvider provider = new Nexus3OptionProvider(client);
+		List<OptionValue> options = provider.getOptionValues(configuration);
+		assertEquals(0, options.size());
+	}
+
+	@Test
+	public void NoJsonFailedClientCall()  throws IOException {
+		when(client.newCall(any())).thenReturn(call);
+		String json = "";
+		when(call.execute()).thenReturn(response(json));
+		Nexus3OptionProvider provider = new Nexus3OptionProvider(client);
+		List<OptionValue> options = provider.getOptionValues(configuration);
+		assertEquals(0, options.size());
+	}
+
+	@Test
+	public void showMessageIfNotConfigured() throws IOException {
+		when(client.newCall(any())).thenReturn(call);
 		configuration.remove("endpointHost");
 		String json = "{\"items\":[{\"path\": \"v2/COMP_NAME/manifests/sprint-11_4\"}]}";
 		when(call.execute()).thenReturn(response(json));
@@ -87,12 +138,14 @@ public class Nexus3OptionProviderTest {
 		assertEquals(1, options.size());
 		String message = "Configure project.plugin.OptionValues.Nexus3OptionProvider.endpointHost";
 		assertEquals(message, options.get(0).getName());
+		assertEquals(message, options.get(0).getValue());
 
 		verify(call, times(0)).execute();
 	}
 
 	@Test
-	public void callOnceIfNotContinued() throws IOException, StepException {
+	public void callOnceIfNotContinued() throws IOException {
+		when(client.newCall(any())).thenReturn(call);
 		String json = "{\"items\":[{\"path\": \"v2/COMP_NAME/manifests/sprint-11_4\"}]}";
 		when(call.execute()).thenReturn(response(json));
 
@@ -103,7 +156,8 @@ public class Nexus3OptionProviderTest {
 	}
 
 	@Test
-	public void callTwiceIfContinued() throws IOException, StepException {
+	public void callTwiceIfContinued() throws IOException {
+		when(client.newCall(any())).thenReturn(call);
 		String json1 = "{\"items\":[{\"path\": \"v2/COMP_NAME/manifests/sprint-11_4\"}], \"continuationToken\" : \"string\"}";
 		String json2 = "{\"items\":[{\"path\": \"v2/COMP_NAME/manifests/sprint-11_4\"}]}";
 		when(call.execute()).thenReturn(response(json1), response(json2));
@@ -115,7 +169,35 @@ public class Nexus3OptionProviderTest {
 	}
 
 	@Test
-	public void returnsOneItemForSingle() throws IOException, StepException {
+	public void callOnceIfContinuedTokenIsEmpty() throws IOException {
+		when(client.newCall(any())).thenReturn(call);
+		String json1 = "{\"items\":[{\"path\": \"v2/COMP_NAME/manifests/sprint-11_4\"}], \"continuationToken\" : \"\"}";
+		String json2 = "{\"items\":[{\"path\": \"v2/COMP_NAME/manifests/sprint-11_4\"}]}";
+		when(call.execute()).thenReturn(response(json1), response(json2));
+
+		Nexus3OptionProvider provider = new Nexus3OptionProvider(client);
+		provider.getOptionValues(configuration);
+
+		verify(call, times(1)).execute();
+	}
+
+	@Test
+	public void handleNullResultFrmContinuedToken() throws IOException {
+		when(client.newCall(any())).thenReturn(call);
+		String json1 = "{\"items\":[{\"path\": \"v2/COMP_NAME/manifests/sprint-11_4\"}], \"continuationToken\" : \"string\"}";
+		String json2 = "{\"items\":[]}";
+		when(call.execute()).thenReturn(response(json1), response(json2));
+
+		Nexus3OptionProvider provider = new Nexus3OptionProvider(client);
+		List<OptionValue> options = provider.getOptionValues(configuration);
+
+		verify(call, times(2)).execute();
+		assertEquals(1, options.size());
+	}
+
+	@Test
+	public void returnsOneItemForSingle() throws IOException {
+		when(client.newCall(any())).thenReturn(call);
 		String json = "{\"items\":[{\"path\": \"v2/COMP_NAME/manifests/sprint-11_4\"}]}";
 		when(call.execute()).thenReturn(response(json));
 
@@ -124,10 +206,12 @@ public class Nexus3OptionProviderTest {
 
 		assertEquals(1, options.size());
 		assertEquals("COMP_NAME:sprint-11_4", options.get(0).getName());
+		assertEquals("COMP_NAME:sprint-11_4", options.get(0).getValue());
 	}
 
 	@Test
-	public void returnsTwoItemsForDouble() throws IOException, StepException {
+	public void returnsTwoItemsForDouble() throws IOException {
+		when(client.newCall(any())).thenReturn(call);
 		String json = "{\"items\":[" + item("sprint-11_4") + "," + item("branch-foo_3") + "]}";
 		when(call.execute()).thenReturn(response(json));
 
@@ -140,7 +224,8 @@ public class Nexus3OptionProviderTest {
 	}
 
 	@Test
-	public void returnsTwoItemsForDoubleWithExtraBuilds() throws IOException, StepException {
+	public void returnsTwoItemsForDoubleWithExtraBuilds() throws IOException {
+		when(client.newCall(any())).thenReturn(call);
 		String json = "{\"items\":[" + item("sprint-11_3") + "," + item("sprint-11_4") + "," + item("branch-foo_3")
 				+ "," + item("branch-foo_2") + "," + item("sprint-11_2") + "," + item("branch-foo_1") + "]}";
 		when(call.execute()).thenReturn(response(json));
@@ -154,7 +239,8 @@ public class Nexus3OptionProviderTest {
 	}
 
 	@Test
-	public void returnsFourItemsForOneBranchAndTwoReleases() throws IOException, StepException {
+	public void returnsFourItemsForOneBranchAndTwoReleases() throws IOException {
+		when(client.newCall(any())).thenReturn(call);
 		String json = "{\"items\":[" + item("sprint-11_3") + "," + item("sprint-11_4") + "," + item("v3.1.2.3_4") + ","
 				+ item("v3.1.2.2_1") + "," + item("v3.1.2.3_3") + "," + item("v3.1.2.2_2") + "]}";
 		when(call.execute()).thenReturn(response(json));
@@ -170,7 +256,8 @@ public class Nexus3OptionProviderTest {
 	}
 
 	@Test
-	public void returnsFourItemsForOneBranchAndTwoSemanticReleases() throws IOException, StepException {
+	public void returnsFourItemsForOneBranchAndTwoSemanticReleases() throws IOException {
+		when(client.newCall(any())).thenReturn(call);
 		String json = "{\"items\":[" + item("sprint-11_3") + "," + item("sprint-11_4") + "," + item("v1.2.3_4") + ","
 				+ item("v1.2.2_1") + "," + item("v1.2.3_3") + "," + item("v1.2.2_2") + "]}";
 		when(call.execute()).thenReturn(response(json));
@@ -186,7 +273,8 @@ public class Nexus3OptionProviderTest {
 	}
 
 	@Test
-	public void returnsFourItemsForOneBranchAndTwoBareSemanticReleases() throws IOException, StepException {
+	public void returnsFourItemsForOneBranchAndTwoBareSemanticReleases() throws IOException {
+		when(client.newCall(any())).thenReturn(call);
 		String json = "{\"items\":[" + item("sprint_11-3") + "," + item("sprint_11-4") + "," + item("14.2.3-4") + ","
 				+ item("2.2.2-1") + "," + item("14.2.3-3") + "," + item("2.2.2-2") + "]}";
 		when(call.execute()).thenReturn(response(json));
@@ -202,7 +290,8 @@ public class Nexus3OptionProviderTest {
 	}
 
 	@Test
-	public void sortsBuildNumbersNumerically() throws IOException, StepException {
+	public void sortsBuildNumbersNumerically() throws IOException {
+		when(client.newCall(any())).thenReturn(call);
 		String json = "{\"items\":[" + item("sprint_11-13") + "," + item("sprint_11-4") + "," + item("1.2.3-4") + ","
 				+ item("1.2.2-21") + "," + item("1.2.3-11") + "," + item("1.2.2-2") + "]}";
 		when(call.execute()).thenReturn(response(json));
@@ -218,7 +307,8 @@ public class Nexus3OptionProviderTest {
 	}
 
 	@Test
-	public void sortsIssuesNumerically() throws IOException, StepException {
+	public void sortsIssuesNumerically() throws IOException {
+		when(client.newCall(any())).thenReturn(call);
 		String json = "{\"items\":[" + item("sprint_11-13") + "," + item("sprint_11-4") + "," + item("1.2.3-4") + ","
 				+ item("1.2.2-21") + "," + item("1.2.3-11") + "," + item("ISSUE-234-one-issue-2") + ","
 				+ item("ISSUE-234-one-issue-12") + "," + item("ISSUE-1000-another-issue-27") + ","
