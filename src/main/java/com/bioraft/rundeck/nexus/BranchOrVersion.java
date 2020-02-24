@@ -102,6 +102,9 @@ public class BranchOrVersion {
 	 * @return Return 0 if equal, 1 if this is greater, -1 if that is greater.
 	 */
 	public int compareTo(Object other) {
+		if (other == null) {
+			return 1;
+		}
 		BranchOrVersion that = (BranchOrVersion) other;
 		CompareToBuilder comparator = new CompareToBuilder();
 		Iterator<String> thatIterator = that.getIterator();

@@ -68,39 +68,23 @@ public class OptionProviderImpl {
 		Map<String, BranchOrVersion> seenReleases = new TreeMap<>();
 
 		BranchOrVersion latest = null;
-		boolean firstVersionTag = true;
 
 		for (String path : imageList) {
 			BranchOrVersion current = new BranchOrVersion(path);
 			String versionOrBuild = current.getVersion();
 			if (current.isVersion()) {
-				// This looks like a version string; Update the Releases map.
-				if (seenReleases.containsKey(versionOrBuild)) {
-					if (current.compareTo(seenReleases.get(versionOrBuild)) > 0) {
-						seenReleases.put(versionOrBuild, current);
-					}
-				} else {
-					seenReleases.put(versionOrBuild, current);
-				}
-				// Store the most recent version to render as the first entry. Older versions will be rendered at the
-				// end of the list.
-				if (firstVersionTag || current.compareTo(latest) > 0) {
-					firstVersionTag = false;
+				updateBranchOrVersionMap(current, versionOrBuild, seenReleases);
+				// Store the most recent version to render as the first entry.
+				// Older versions will be rendered at the end of the list.
+				if (current.compareTo(latest) > 0) {
 					latest = current;
 				}
 			} else {
-				// This looks like a branch specifier; Update the Branches map.
-				if (seenBranches.containsKey(versionOrBuild)) {
-					if (current.compareTo(seenBranches.get(versionOrBuild)) > 0) {
-						seenBranches.put(versionOrBuild, current);
-					}
-				} else {
-					seenBranches.put(versionOrBuild, current);
-				}
+				updateBranchOrVersionMap(current, versionOrBuild, seenBranches);
 			}
 		}
 
-		if (!firstVersionTag) {
+		if (latest != null) {
 			optionValues.add(new DockerImageOptionValue(latest));
 		}
 
@@ -117,6 +101,23 @@ public class OptionProviderImpl {
 		}
 
 		return optionValues;
+	}
+
+	/**
+	 * Update the Branches Map.
+	 * @param current The branch or version object we are considering.
+	 * @param versionOrBuild The version or build of the object we are considering.
+	 */
+	private void updateBranchOrVersionMap(BranchOrVersion current, String versionOrBuild, Map<String, BranchOrVersion> map) {
+		// If we are already tracking the branch, check to ensure this is newer before saving.
+		// Otherwise, it is a new branc to us so start tracking it.
+		if (map.containsKey(versionOrBuild)) {
+			if (current.compareTo(map.get(versionOrBuild)) > 0) {
+				map.put(versionOrBuild, current);
+			}
+		} else {
+			map.put(versionOrBuild, current);
+		}
 	}
 
 	/**
@@ -170,22 +171,16 @@ public class OptionProviderImpl {
 		}
 		Request request = requestBuilder.build();
 		Response response;
-		try {
-			response = client.newCall(request).execute();
-		} catch (IOException e) {
-			return new ArrayList<>();
-		}
 		String json;
 		try {
+			response = client.newCall(request).execute();
 			ResponseBody body = response.body();
-			if (body == null) {
-				return new ArrayList<>();
-			}
+			assert body != null;
 			json = body.string();
 			if (json.length() == 0) {
 				return new ArrayList<>();
 			}
-		} catch (IOException  e) {
+		} catch (NullPointerException | IOException e) {
 			return new ArrayList<>();
 		}
 		ObjectMapper objectMapper = new ObjectMapper();
@@ -254,7 +249,7 @@ public class OptionProviderImpl {
 	}
 
 	/**
-	 * Provides the primary means of adding artifacts to the list of OptionValues
+	 * Provides the primary means of adding artifacts to the list of OptionValues.
 	 */
 	static class DockerImageOptionValue implements OptionValue {
 		String name;

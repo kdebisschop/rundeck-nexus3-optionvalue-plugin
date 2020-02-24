@@ -53,6 +53,8 @@ public class BranchOrVersionTest {
 
 		assertEquals(0, testSubject.compareTo(subject(path(COMPONENT, "1.2.3", DASH, "3"))));
 
+		// 1.2.3-3 is greater than null
+		assertEquals(1, testSubject.compareTo(null));
 		// 1.2.3-3 is greater than 1.2.3-2
 		assertEquals(1, testSubject.compareTo(subject(path(COMPONENT, "1.2.3", DASH, "2"))));
 		// 1.2.3-3 is greater than 1.2.2-3
@@ -75,6 +77,8 @@ public class BranchOrVersionTest {
 		assertEquals(0, subject(COMPONENT).compareTo(subject(COMPONENT)));
 
 		assertEquals(0, subject(EMPTY).compareTo(subject(EMPTY)));
+
+
 	}
 
 	public void runTest(String component, String version, String separator, String build) {

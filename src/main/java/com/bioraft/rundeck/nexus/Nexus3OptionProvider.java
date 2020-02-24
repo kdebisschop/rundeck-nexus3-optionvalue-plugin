@@ -24,8 +24,7 @@ import com.dtolabs.rundeck.plugins.option.OptionValue;
 import com.dtolabs.rundeck.plugins.option.OptionValuesPlugin;
 import okhttp3.OkHttpClient;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Plugin(name = Nexus3OptionProvider.PLUGIN_NAME, service = ServiceNameConstants.OptionValues)
 @PluginDescription(title = "Nexus3 Images", description = "Filtered and sorted docker images on nexus server.")
@@ -71,10 +70,10 @@ public class Nexus3OptionProvider implements OptionValuesPlugin {
 
 	@Override
 	public List<OptionValue> getOptionValues(Map configuration) {
-		config = configuration;
+		config = new HashMap<>();
 
 		setVariable(configuration,"endpointScheme", endpointScheme);
-		setVariable(configuration, "endpointHost", endpointHost);
+		setVariable(configuration,"endpointHost", endpointHost);
 		setVariable(configuration,"endpointPath", endpointPath);
 		setVariable(configuration,"user", user);
 		setVariable(configuration,"password", password);
@@ -86,8 +85,11 @@ public class Nexus3OptionProvider implements OptionValuesPlugin {
 		return worker.getOptionValues(config);
 	}
 
+	@SuppressWarnings("rawtypes")
 	private void setVariable(Map configuration, String variableName, String variable) {
-		if (!configuration.containsKey(variableName) && variable != null && variable.length() > 0) {
+		if (configuration.containsKey(variableName)) {
+			config.put(variableName, configuration.get(variableName).toString());
+		} else  if (variable != null && variable.length() > 0) {
 			config.put(variableName, variable);
 		}
 	}
