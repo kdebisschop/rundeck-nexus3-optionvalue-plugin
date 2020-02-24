@@ -53,7 +53,7 @@ import org.apache.commons.lang.builder.CompareToBuilder;
  */
 public class BranchOrVersion {
 
-	public static final String buildSeparatorRegex = "[_+-]";
+	public static final String BUILD_SEPARATOR_REGEX = "[_+-]";
 
 	String artifactId;
 	String versionOrBranch;
@@ -76,9 +76,9 @@ public class BranchOrVersion {
 	public BranchOrVersion(String path) {
 		artifactId = component(path);
 		String tag = tag(path);
-		build = tag.replaceFirst("^.*" + buildSeparatorRegex + "([a-zA-Z0-9]+)$", "$1");
-		versionOrBranch = tag.replaceFirst("^(.*)" + buildSeparatorRegex + build + "$", "$1");
-		sep = tag.replaceFirst("^.*(" + buildSeparatorRegex + ")" + build + "$", "$1");
+		build = tag.replaceFirst("^.*" + BUILD_SEPARATOR_REGEX + "([a-zA-Z0-9]+)$", "$1");
+		versionOrBranch = tag.replaceFirst("^(.*)" + BUILD_SEPARATOR_REGEX + build + "$", "$1");
+		sep = tag.replaceFirst("^.*(" + BUILD_SEPARATOR_REGEX + ")" + build + "$", "$1");
 		this.parts = versionOrBranch.split("[.]");
 	}
 

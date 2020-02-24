@@ -38,7 +38,8 @@ import okhttp3.Request.Builder;
  */
 public class OptionProviderImpl {
 
-	private final String CONTINUATION_TOKEN = "continuationToken";
+	static final String CONTINUATION_TOKEN = "continuationToken";
+
 	private OkHttpClient client;
 
 	private Map<String, String> config;
@@ -122,16 +123,12 @@ public class OptionProviderImpl {
 	 * Sorts versions or branches numerically by value instead of key using the compareTo function of the value object.
 	 *
 	 * @param map The map of BranchOrVersion objects, keyed by String.
-	 * @param <K> The component name with build suffix removed.
-	 * @param <V> The BranchOrVersion object.
 	 * @return A list of assets sorted by VersionOrString.
 	 */
-	static <K, V extends Comparable<? super V>> SortedSet<Map.Entry<String, BranchOrVersion>> entriesSortedByValues(
+	static SortedSet<Map.Entry<String, BranchOrVersion>> entriesSortedByValues(
 			Map<String, BranchOrVersion> map) {
-		SortedSet<Map.Entry<String, BranchOrVersion>> sortedEntries = new TreeSet<>(
-				(e1, e2) -> {
-					return e1.getValue().compareTo(e2.getValue());
-				});
+		SortedSet<Map.Entry<String, BranchOrVersion>> sortedEntries =
+				new TreeSet<>((e1, e2) -> e1.getValue().compareTo(e2.getValue()));
 		sortedEntries.addAll(map.entrySet());
 		return sortedEntries;
 	}
@@ -166,17 +163,7 @@ public class OptionProviderImpl {
 		String endpointHost = config.get("endpointHost");
 		String endpointPath = config.get("endpointPath");
 		String endpoint = endpointScheme + "://" + endpointHost + endpointPath;
-		HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(endpoint)).newBuilder();
-		urlBuilder.addQueryParameter("repository", config.get("repository"));
-		urlBuilder.addQueryParameter("name", config.get("componentName"));
-		// For docker, version is the docker tag.
-		urlBuilder.addQueryParameter("sort", "version");
-		if (config.containsKey("componentVersion")) {
-			urlBuilder.addQueryParameter("version", config.get("componentVersion"));
-		}
-		if (continuationToken != null) {
-			urlBuilder.addQueryParameter(CONTINUATION_TOKEN, continuationToken);
-		}
+		HttpUrl.Builder urlBuilder = buildUrl(endpoint, continuationToken);
 		Builder requestBuilder = new Request.Builder().url(urlBuilder.build());
 		if (config.containsKey("user") && config.containsKey("password")) {
 			requestBuilder.addHeader("Authorization", Credentials.basic(config.get("user"), config.get("password")));
@@ -223,6 +210,21 @@ public class OptionProviderImpl {
 		}
 
 		return itemList;
+	}
+
+	private HttpUrl.Builder buildUrl(String endpoint, String continuationToken) {
+		HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(endpoint)).newBuilder();
+		urlBuilder.addQueryParameter("repository", config.get("repository"));
+		urlBuilder.addQueryParameter("name", config.get("componentName"));
+		// For docker, version is the docker tag.
+		urlBuilder.addQueryParameter("sort", "version");
+		if (config.containsKey("componentVersion")) {
+			urlBuilder.addQueryParameter("version", config.get("componentVersion"));
+		}
+		if (continuationToken != null) {
+			urlBuilder.addQueryParameter(CONTINUATION_TOKEN, continuationToken);
+		}
+		return urlBuilder;
 	}
 
 	/**

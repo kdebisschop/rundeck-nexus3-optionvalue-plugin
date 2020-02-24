@@ -15,8 +15,11 @@
  */
 package com.bioraft.rundeck.nexus;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.dtolabs.rundeck.core.plugins.Plugin;
 import com.dtolabs.rundeck.core.plugins.configuration.PropertyScope;
@@ -39,16 +42,16 @@ public class Nexus3OptionProvider implements OptionValuesPlugin {
 	@PluginProperty(title = "Endpoint scheme", description = "Nexus server scheme", required = true, defaultValue = "https", scope = PropertyScope.Project)
 	private String endpointScheme;
 
-	@PluginProperty(title = "Endpoint host", description = "Nexus server hostname", required = false, defaultValue = "", scope = PropertyScope.Project)
+	@PluginProperty(title = "Endpoint host", description = "Nexus server hostname", defaultValue = "", scope = PropertyScope.Project)
 	private String endpointHost;
 
 	@PluginProperty(title = "Endpoint path", description = "Nexus path with leading slash", required = true, defaultValue = "/service/rest/v1/search/assets", scope = PropertyScope.Project)
 	private String endpointPath;
 
-	@PluginProperty(title = "User", description = "Nexus server user name", required = false, defaultValue = "", scope = PropertyScope.Project)
+	@PluginProperty(title = "User", description = "Nexus server user name", defaultValue = "", scope = PropertyScope.Project)
 	private String user;
 	
-	@PluginProperty(title = "Password", description = "Nexus server password", required = false, defaultValue = "", scope = PropertyScope.Project)
+	@PluginProperty(title = "Password", description = "Nexus server password", defaultValue = "", scope = PropertyScope.Project)
 	private String password;
 	
 	@PluginProperty(title = "Repository", description = "Nexus repository", required = true, defaultValue = "docker", scope = PropertyScope.Project)
@@ -57,7 +60,7 @@ public class Nexus3OptionProvider implements OptionValuesPlugin {
 	@PluginProperty(title = "Component name", description = "Nexus component name", required = true, defaultValue = "*", scope = PropertyScope.Project)
 	private String componentName;
 
-	@PluginProperty(title = "Component version", description = "Nexus component version", required = false, scope = PropertyScope.Project)
+	@PluginProperty(title = "Component version", description = "Nexus component version", scope = PropertyScope.Project)
 	private String componentVersion;
 
 	public Nexus3OptionProvider() {
@@ -68,44 +71,28 @@ public class Nexus3OptionProvider implements OptionValuesPlugin {
 		this.client = client;
 	}
 
+	Map<String, String> config;
+
 	@Override
 	public List<OptionValue> getOptionValues(Map configuration) {
-		@SuppressWarnings("unchecked")
-		Map<String, String> config = configuration;
+		config = configuration;
 
-		if (!config.containsKey("endpointScheme") && endpointScheme != null && endpointScheme.length() > 0) {
-			config.put("endpointScheme", endpointScheme);
-		}
-
-		if (!config.containsKey("endpointHost") && endpointHost != null && endpointHost.length() > 0) {
-			config.put("endpointHost", endpointHost);
-		}
-
-		if (!config.containsKey("endpointPath") && endpointPath != null && endpointPath.length() > 0) {
-			config.put("endpointPath", endpointPath);
-		}
-
-		if (!config.containsKey("user") && user != null && user.length() > 0) {
-			config.put("user", user);
-		}
-
-		if (!config.containsKey("password") && password != null && password.length() > 0) {
-			config.put("password", password);
-		}
-
-		if (!config.containsKey("repository") && repository != null && repository.length() > 0) {
-			config.put("repository", repository);
-		}
-
-		if (!config.containsKey("componentName") && componentName != null && componentName.length() > 0) {
-			config.put("componentName", componentName);
-		}
-
-		if (!config.containsKey("componentVersion") && componentVersion != null && componentVersion.length() > 0) {
-			config.put("componentVersion", componentVersion);
-		}
+		setVariable(configuration,"endpointScheme", endpointScheme);
+		setVariable(configuration, "endpointHost", endpointHost);
+		setVariable(configuration,"endpointPath", endpointPath);
+		setVariable(configuration,"user", user);
+		setVariable(configuration,"password", password);
+		setVariable(configuration,"repository", repository);
+		setVariable(configuration,"componentName", componentName);
+		setVariable(configuration,"componentVersion",componentVersion);
 
 		OptionProviderImpl worker = new OptionProviderImpl(client);
 		return worker.getOptionValues(config);
+	}
+
+	private void setVariable(Map configuration, String variableName, String variable) {
+		if (!configuration.containsKey(variableName) && variable != null && variable.length() > 0) {
+			config.put(variableName, variable);
+		}
 	}
 }

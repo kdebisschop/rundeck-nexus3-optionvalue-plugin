@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -76,7 +77,7 @@ public class Nexus3OptionProviderTest {
 
 	@Test
 	public void testConstructor() {
-		Nexus3OptionProviderTest subject = new Nexus3OptionProviderTest();
+		Nexus3OptionProvider subject = new Nexus3OptionProvider();
 		assertNotNull(subject);
 	}
 
@@ -84,6 +85,20 @@ public class Nexus3OptionProviderTest {
 	public void testConstructor2() {
 		OptionProviderImpl subject = new OptionProviderImpl();
 		assertNotNull(subject);
+	}
+
+	public void testConfiguration() throws IOException{
+		when(client.newCall(any())).thenReturn(call);
+		ArgumentCaptor<Request> requestCaptor = ArgumentCaptor.forClass(Request.class);
+		String json = "{\"items\":[{\"path\": \"v2/COMP_NAME/manifests/sprint-11_4\"}]}";
+		when(call.execute()).thenReturn(response(json));
+
+		Nexus3OptionProvider provider = new Nexus3OptionProvider(client);
+		provider.getOptionValues(configuration);
+
+		verify(client).newCall(requestCaptor.capture());
+		Request request = requestCaptor.getValue();
+		assertEquals("https://nexus.example.com//service/rest/v1/search/assets", request.url().toString());
 	}
 
 	@Test
@@ -97,7 +112,7 @@ public class Nexus3OptionProviderTest {
 	}
 
 	@Test
-	public void clientCallThrowsException()  throws IOException {
+	public void clientCallThrowsException() throws IOException {
 		when(client.newCall(any())).thenReturn(call);
 		when(call.execute()).thenThrow(new IOException());
 		Nexus3OptionProvider provider = new Nexus3OptionProvider(client);
