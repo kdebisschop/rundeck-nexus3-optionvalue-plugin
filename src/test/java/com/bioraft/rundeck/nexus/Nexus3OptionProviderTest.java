@@ -34,7 +34,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.dtolabs.rundeck.core.execution.workflow.steps.StepException;
 import com.dtolabs.rundeck.plugins.option.OptionValue;
 
 import okhttp3.Call;
@@ -54,12 +53,8 @@ import okhttp3.ResponseBody;
 @RunWith(MockitoJUnitRunner.class)
 public class Nexus3OptionProviderTest {
 
-	Nexus3OptionProvider plugin;
-
 	@Mock
 	OkHttpClient client;
-
-	Request request;
 
 	@Mock
 	Call call;

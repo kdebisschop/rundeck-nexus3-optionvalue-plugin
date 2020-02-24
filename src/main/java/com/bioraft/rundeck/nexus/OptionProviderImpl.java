@@ -175,7 +175,9 @@ public class OptionProviderImpl {
 		try {
 			response = client.newCall(request).execute();
 			ResponseBody body = response.body();
-			assert body != null;
+			if (body == null) {
+				return new ArrayList<>();
+			}
 			json = body.string();
 			if (json.length() == 0) {
 				return new ArrayList<>();
@@ -198,9 +200,7 @@ public class OptionProviderImpl {
 			String token = tree.path(CONTINUATION_TOKEN).asText();
 			if (token.length() > 0) {
 				ArrayList<String> nextItems = nexusSearch(token);
-				if (nextItems != null) {
-					itemList.addAll(nextItems);
-				}
+				itemList.addAll(nextItems);
 			}
 		}
 
