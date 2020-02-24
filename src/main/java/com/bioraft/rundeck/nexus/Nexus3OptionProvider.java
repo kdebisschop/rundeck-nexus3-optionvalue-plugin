@@ -15,12 +15,6 @@
  */
 package com.bioraft.rundeck.nexus;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import com.dtolabs.rundeck.core.plugins.Plugin;
 import com.dtolabs.rundeck.core.plugins.configuration.PropertyScope;
 import com.dtolabs.rundeck.plugins.ServiceNameConstants;
@@ -28,8 +22,10 @@ import com.dtolabs.rundeck.plugins.descriptions.PluginDescription;
 import com.dtolabs.rundeck.plugins.descriptions.PluginProperty;
 import com.dtolabs.rundeck.plugins.option.OptionValue;
 import com.dtolabs.rundeck.plugins.option.OptionValuesPlugin;
-
 import okhttp3.OkHttpClient;
+
+import java.util.List;
+import java.util.Map;
 
 @Plugin(name = Nexus3OptionProvider.PLUGIN_NAME, service = ServiceNameConstants.OptionValues)
 @PluginDescription(title = "Nexus3 Images", description = "Filtered and sorted docker images on nexus server.")
