@@ -71,7 +71,7 @@ public class Nexus3OptionProvider implements OptionValuesPlugin {
 	@Override
 	public List<OptionValue> getOptionValues(Map configuration) {
 		@SuppressWarnings("unchecked")
-		Map<String, String> config = (Map<String, String>) configuration;
+		Map<String, String> config = configuration;
 
 		if (!config.containsKey("endpointScheme") && endpointScheme != null && endpointScheme.length() > 0) {
 			config.put("endpointScheme", endpointScheme);

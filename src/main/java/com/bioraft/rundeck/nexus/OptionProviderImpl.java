@@ -21,7 +21,6 @@ import java.util.Map.Entry;
 
 import com.dtolabs.rundeck.plugins.option.OptionValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -39,6 +38,7 @@ import okhttp3.Request.Builder;
  */
 public class OptionProviderImpl {
 
+	private final String CONTINUATION_TOKEN = "continuationToken";
 	private OkHttpClient client;
 
 	private Map<String, String> config;
@@ -175,7 +175,7 @@ public class OptionProviderImpl {
 			urlBuilder.addQueryParameter("version", config.get("componentVersion"));
 		}
 		if (continuationToken != null) {
-			urlBuilder.addQueryParameter("continuationToken", continuationToken);
+			urlBuilder.addQueryParameter(CONTINUATION_TOKEN, continuationToken);
 		}
 		Builder requestBuilder = new Request.Builder().url(urlBuilder.build());
 		if (config.containsKey("user") && config.containsKey("password")) {
@@ -212,8 +212,8 @@ public class OptionProviderImpl {
 		while (items.hasNext()) {
 			itemList.add(items.next().get("path").asText());
 		}
-		if (tree.has("continuationToken")) {
-			String token = tree.path("continuationToken").asText();
+		if (tree.has(CONTINUATION_TOKEN)) {
+			String token = tree.path(CONTINUATION_TOKEN).asText();
 			if (token.length() > 0) {
 				ArrayList<String> nextItems = nexusSearch(token);
 				if (nextItems != null) {
