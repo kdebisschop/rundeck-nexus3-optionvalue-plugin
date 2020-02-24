@@ -53,7 +53,7 @@ import org.apache.commons.lang.builder.CompareToBuilder;
  */
 public class BranchOrVersion {
 
-	public static final String buildSeparatorRegex = "[_+-]";
+	public static final String BUILD_SEPARATOR_REGEX = "[_+-]";
 
 	String artifactId;
 	String versionOrBranch;
@@ -76,18 +76,14 @@ public class BranchOrVersion {
 	public BranchOrVersion(String path) {
 		artifactId = component(path);
 		String tag = tag(path);
-		build = tag.replaceFirst("^.*" + buildSeparatorRegex + "([a-zA-Z0-9]+)$", "$1");
-		versionOrBranch = tag.replaceFirst("^(.*)" + buildSeparatorRegex + build + "$", "$1");
-		sep = tag.replaceFirst("^.*(" + buildSeparatorRegex + ")" + build + "$", "$1");
+		build = tag.replaceFirst("^.*" + BUILD_SEPARATOR_REGEX + "([a-zA-Z0-9]+)$", "$1");
+		versionOrBranch = tag.replaceFirst("^(.*)" + BUILD_SEPARATOR_REGEX + build + "$", "$1");
+		sep = tag.replaceFirst("^.*(" + BUILD_SEPARATOR_REGEX + ")" + build + "$", "$1");
 		this.parts = versionOrBranch.split("[.]");
 	}
 
 	public Iterator<String> getIterator() {
 		return Arrays.asList(parts).iterator();
-	}
-
-	public int size() {
-		return parts.length;
 	}
 
 	/**
@@ -106,22 +102,29 @@ public class BranchOrVersion {
 	 * @return Return 0 if equal, 1 if this is greater, -1 if that is greater.
 	 */
 	public int compareTo(Object other) {
+		if (other == null) {
+			return 1;
+		}
 		BranchOrVersion that = (BranchOrVersion) other;
 		CompareToBuilder comparator = new CompareToBuilder();
 		Iterator<String> thatIterator = that.getIterator();
-		if (this.size() == 0 && that.size() == 0) {
-			return 0;
-		}
 		Iterator<String> thisIterator = getIterator();
 		while (thatIterator.hasNext()) {
 			if (!thisIterator.hasNext()) {
-				break;
+				if (comparator.toComparison() == 0) {
+					return -1;
+				} else {
+					break;
+				}
 			}
 			String thisOne = thisIterator.next();
 			String thatOne = thatIterator.next();
 			comparator.append(partOne(thisOne), partOne(thatOne));
 			comparator.append(partTwo(thisOne), partTwo(thatOne));
 			comparator.append(partThree(thisOne), partThree(thatOne));
+		}
+		if (comparator.toComparison() == 0 && thisIterator.hasNext()) {
+			return 1;
 		}
 		comparator.append(partOne(this.build), partOne(that.build));
 		comparator.append(partTwo(this.build), partTwo(that.build));

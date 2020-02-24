@@ -21,16 +21,11 @@ import java.util.Map.Entry;
 
 import com.dtolabs.rundeck.plugins.option.OptionValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import okhttp3.Credentials;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
+import okhttp3.*;
 import okhttp3.Request.Builder;
-import okhttp3.Response;
 
 /**
  * Expands three-part semantic versions to handle cases where there are more
@@ -42,6 +37,8 @@ import okhttp3.Response;
  * @since 2019-12-26
  */
 public class OptionProviderImpl {
+
+	static final String CONTINUATION_TOKEN = "continuationToken";
 
 	private OkHttpClient client;
 
@@ -71,39 +68,23 @@ public class OptionProviderImpl {
 		Map<String, BranchOrVersion> seenReleases = new TreeMap<>();
 
 		BranchOrVersion latest = null;
-		boolean firstVersionTag = true;
 
 		for (String path : imageList) {
 			BranchOrVersion current = new BranchOrVersion(path);
 			String versionOrBuild = current.getVersion();
 			if (current.isVersion()) {
-				// This looks like a version string; Update the Releases map.
-				if (seenReleases.containsKey(versionOrBuild)) {
-					if (current.compareTo(seenReleases.get(versionOrBuild)) > 0) {
-						seenReleases.put(versionOrBuild, current);
-					}
-				} else {
-					seenReleases.put(versionOrBuild, current);
-				}
-				// Store the most recent version to render as the first entry. Older versions will be rendered at the
-				// end of the list.
-				if (firstVersionTag || current.compareTo(latest) > 0) {
-					firstVersionTag = false;
+				updateBranchOrVersionMap(current, versionOrBuild, seenReleases);
+				// Store the most recent version to render as the first entry.
+				// Older versions will be rendered at the end of the list.
+				if (current.compareTo(latest) > 0) {
 					latest = current;
 				}
 			} else {
-				// This looks like a branch specifier; Update the Branches map.
-				if (seenBranches.containsKey(versionOrBuild)) {
-					if (current.compareTo(seenBranches.get(versionOrBuild)) > 0) {
-						seenBranches.put(versionOrBuild, current);
-					}
-				} else {
-					seenBranches.put(versionOrBuild, current);
-				}
+				updateBranchOrVersionMap(current, versionOrBuild, seenBranches);
 			}
 		}
 
-		if (!firstVersionTag) {
+		if (latest != null) {
 			optionValues.add(new DockerImageOptionValue(latest));
 		}
 
@@ -123,19 +104,32 @@ public class OptionProviderImpl {
 	}
 
 	/**
+	 * Update the Branches Map.
+	 * @param current The branch or version object we are considering.
+	 * @param versionOrBuild The version or build of the object we are considering.
+	 */
+	private void updateBranchOrVersionMap(BranchOrVersion current, String versionOrBuild, Map<String, BranchOrVersion> map) {
+		// If we are already tracking the branch, check to ensure this is newer before saving.
+		// Otherwise, it is a new branc to us so start tracking it.
+		if (map.containsKey(versionOrBuild)) {
+			if (current.compareTo(map.get(versionOrBuild)) > 0) {
+				map.put(versionOrBuild, current);
+			}
+		} else {
+			map.put(versionOrBuild, current);
+		}
+	}
+
+	/**
 	 * Sorts versions or branches numerically by value instead of key using the compareTo function of the value object.
 	 *
 	 * @param map The map of BranchOrVersion objects, keyed by String.
-	 * @param <K> The component name with build suffix removed.
-	 * @param <V> The BranchOrVersion object.
 	 * @return A list of assets sorted by VersionOrString.
 	 */
-	static <K, V extends Comparable<? super V>> SortedSet<Map.Entry<String, BranchOrVersion>> entriesSortedByValues(
+	static SortedSet<Map.Entry<String, BranchOrVersion>> entriesSortedByValues(
 			Map<String, BranchOrVersion> map) {
-		SortedSet<Map.Entry<String, BranchOrVersion>> sortedEntries = new TreeSet<>(
-				(e1, e2) -> {
-					return e1.getValue().compareTo(e2.getValue());
-				});
+		SortedSet<Map.Entry<String, BranchOrVersion>> sortedEntries =
+				new TreeSet<>((e1, e2) -> e1.getValue().compareTo(e2.getValue()));
 		sortedEntries.addAll(map.entrySet());
 		return sortedEntries;
 	}
@@ -170,34 +164,26 @@ public class OptionProviderImpl {
 		String endpointHost = config.get("endpointHost");
 		String endpointPath = config.get("endpointPath");
 		String endpoint = endpointScheme + "://" + endpointHost + endpointPath;
-		HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(endpoint)).newBuilder();
-		urlBuilder.addQueryParameter("repository", config.get("repository"));
-		urlBuilder.addQueryParameter("name", config.get("componentName"));
-		// For docker, version is the docker tag.
-		urlBuilder.addQueryParameter("sort", "version");
-		if (config.containsKey("componentVersion")) {
-			urlBuilder.addQueryParameter("version", config.get("componentVersion"));
-		}
-		if (continuationToken != null) {
-			urlBuilder.addQueryParameter("continuationToken", continuationToken);
-		}
+		HttpUrl.Builder urlBuilder = buildUrl(endpoint, continuationToken);
 		Builder requestBuilder = new Request.Builder().url(urlBuilder.build());
 		if (config.containsKey("user") && config.containsKey("password")) {
 			requestBuilder.addHeader("Authorization", Credentials.basic(config.get("user"), config.get("password")));
 		}
 		Request request = requestBuilder.build();
 		Response response;
-		try {
-			response = client.newCall(request).execute();
-		} catch (IOException e) {
-			return null;
-		}
 		String json;
 		try {
-			assert response.body() != null;
-			json = response.body().string();
-		} catch (IOException e) {
-			return null;
+			response = client.newCall(request).execute();
+			ResponseBody body = response.body();
+			if (body == null) {
+				return new ArrayList<>();
+			}
+			json = body.string();
+			if (json.length() == 0) {
+				return new ArrayList<>();
+			}
+		} catch (NullPointerException | IOException e) {
+			return new ArrayList<>();
 		}
 		ObjectMapper objectMapper = new ObjectMapper();
 		JsonNode tree;
@@ -210,16 +196,30 @@ public class OptionProviderImpl {
 		while (items.hasNext()) {
 			itemList.add(items.next().get("path").asText());
 		}
-		if (tree.has("continuationToken")) {
-			String token = tree.path("continuationToken").asText();
+		if (tree.has(CONTINUATION_TOKEN)) {
+			String token = tree.path(CONTINUATION_TOKEN).asText();
 			if (token.length() > 0) {
 				ArrayList<String> nextItems = nexusSearch(token);
-				assert nextItems != null;
 				itemList.addAll(nextItems);
 			}
 		}
 
 		return itemList;
+	}
+
+	private HttpUrl.Builder buildUrl(String endpoint, String continuationToken) {
+		HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(endpoint)).newBuilder();
+		urlBuilder.addQueryParameter("repository", config.get("repository"));
+		urlBuilder.addQueryParameter("name", config.get("componentName"));
+		// For docker, version is the docker tag.
+		urlBuilder.addQueryParameter("sort", "version");
+		if (config.containsKey("componentVersion")) {
+			urlBuilder.addQueryParameter("version", config.get("componentVersion"));
+		}
+		if (continuationToken != null) {
+			urlBuilder.addQueryParameter(CONTINUATION_TOKEN, continuationToken);
+		}
+		return urlBuilder;
 	}
 
 	/**
@@ -249,7 +249,7 @@ public class OptionProviderImpl {
 	}
 
 	/**
-	 * Provides the primary means of adding artifacts to the list of OptiionValues
+	 * Provides the primary means of adding artifacts to the list of OptionValues.
 	 */
 	static class DockerImageOptionValue implements OptionValue {
 		String name;

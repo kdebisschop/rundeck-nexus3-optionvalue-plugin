@@ -32,24 +32,53 @@ public class BranchOrVersionTest {
 
 	@Test
 	public void testOne() {
-		String component = "COMPONENT";
-		runTest(component, "0.0.0", "_", "1");
-		runTest(component, "0.1.2", "_", "3");
-		runTest(component, "1.2.1.2", "-", "4");
-		runTest(component, "v1.2.1.5", "-", "6");
-		runTest(component, "v2.2.1.", "_", "16");
-		runTest(component, "v2.2.0.", "_", "beta6");
-		runTest(component, "v2.2.0.", "+", "alpha1");
+		final String COMPONENT = "COMPONENT";
+		runTest(COMPONENT, "0.0.0", "_", "1");
+		runTest(COMPONENT, "0.1.2", "_", "3");
+		runTest(COMPONENT, "1.2.1.2", "-", "4");
+		runTest(COMPONENT, "v1.2.1.5", "-", "6");
+		runTest(COMPONENT, "v2.2.1.", "_", "16");
+		runTest(COMPONENT, "v2.2.0.", "_", "beta6");
+		runTest(COMPONENT, "v2.2.0.", "+", "alpha1");
+		runTest(COMPONENT, "", "", "");
 	}
 
 	@Test
 	public void testComparison() {
-		BranchOrVersion subject;
-		subject = subject(path("COMP", "1.2.3", "-", "3"));
+		BranchOrVersion testSubject;
+		final String COMPONENT = "COMP";
+		final String EMPTY = "";
+		final String DASH = "-";
+		testSubject = subject(path(COMPONENT, "1.2.3", DASH, "3"));
 
-		assertEquals(-1, subject.compareTo(subject(path("COMP", "1.2.3", "-", "4"))));
-		assertEquals(-1, subject.compareTo(subject(path("COMP", "1.2.3", "-", "14"))));
-		assertEquals(-1, subject.compareTo(subject(path("COMP", "2.2.3", "-", "1"))));
+		assertEquals(0, testSubject.compareTo(subject(path(COMPONENT, "1.2.3", DASH, "3"))));
+
+		// 1.2.3-3 is greater than null
+		assertEquals(1, testSubject.compareTo(null));
+		// 1.2.3-3 is greater than 1.2.3-2
+		assertEquals(1, testSubject.compareTo(subject(path(COMPONENT, "1.2.3", DASH, "2"))));
+		// 1.2.3-3 is greater than 1.2.2-3
+		assertEquals(1, testSubject.compareTo(subject(path(COMPONENT, "1.2.2", DASH, "3"))));
+
+		// 1.2.3-3 is less than 1.2.3-4
+		assertEquals(-1, testSubject.compareTo(subject(path(COMPONENT, "1.2.3", DASH, "4"))));
+		// 1.2.3-3 is less than 1.2.3-14
+		assertEquals(-1, testSubject.compareTo(subject(path(COMPONENT, "1.2.3", DASH, "14"))));
+		// 1.2.3-3 is less than 2.2.3-1
+		assertEquals(-1, testSubject.compareTo(subject(path(COMPONENT, "2.2.3", DASH, "1"))));
+
+		// 1.2.3-3 is greater than 1.2-3
+		assertEquals(1, testSubject.compareTo(subject(path(COMPONENT, "1.2", DASH, "3"))));
+		// 1.2.3-3 is greater than 1.2.2.2-3
+		assertEquals(1, testSubject.compareTo(subject(path(COMPONENT, "1.2.2.2", DASH, "3"))));
+		// 1.2.3-3 is less than 1.2.3.1-3
+		assertEquals(-1, testSubject.compareTo(subject(path(COMPONENT, "1.2.3.1", DASH, "3"))));
+
+		assertEquals(0, subject(COMPONENT).compareTo(subject(COMPONENT)));
+
+		assertEquals(0, subject(EMPTY).compareTo(subject(EMPTY)));
+
+
 	}
 
 	public void runTest(String component, String version, String separator, String build) {

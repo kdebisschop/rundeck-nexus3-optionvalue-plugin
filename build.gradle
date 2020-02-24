@@ -53,9 +53,8 @@ scmVersion {
 
         // Append .0 to satisfy SemVer if the tag version is only X.Y
         def origDeserialize = deserialize
-        def orig
         deserialize = { config, position, tagName ->
-            orig = origDeserialize(config, position, tagName)
+            String orig = origDeserialize(config, position, tagName)
             if (orig.split('\\.').length < 3) {
                 orig += ".0"
             }
@@ -77,6 +76,12 @@ configurations{
     // Declare compile to extend from pluginLibs so it inherits the dependencies
     compile{
         extendsFrom pluginLibs
+    }
+}
+
+gradle.projectsEvaluated {
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint:unchecked"
     }
 }
 
