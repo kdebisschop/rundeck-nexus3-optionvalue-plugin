@@ -86,7 +86,7 @@ gradle.projectsEvaluated {
 }
 
 dependencies {
-    implementation 'org.rundeck:rundeck-core:3.2.0-20191218'
+    implementation 'org.rundeck:rundeck-core:3.+'
 
     testImplementation group: 'junit', name: 'junit', version:'4.12'
 
