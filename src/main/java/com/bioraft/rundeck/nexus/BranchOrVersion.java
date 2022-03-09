@@ -76,10 +76,10 @@ public class BranchOrVersion {
 	public BranchOrVersion(String path) {
 		artifactId = component(path);
 		String tag = tag(path);
-		if (tag.matches("^.*" + BUILD_SEPARATOR_REGEX + "([0-9]+)$")) {
-			build = tag.replaceFirst("^.*" + BUILD_SEPARATOR_REGEX + "([0-9]+)$", "$1");
-			versionOrBranch = tag.replaceFirst("^(.*)" + BUILD_SEPARATOR_REGEX + build + "$", "$1");
-			sep = tag.replaceFirst("^.*(" + BUILD_SEPARATOR_REGEX + ")" + build + "$", "$1");
+		if (tag.matches("^.+" + BUILD_SEPARATOR_REGEX + "[a-zA-Z0-9]+$")) {
+			build = tag.replaceFirst("^.+" + BUILD_SEPARATOR_REGEX + "([a-zA-Z0-9]+)$", "$1");
+			versionOrBranch = tag.replaceFirst("^(.+)" + BUILD_SEPARATOR_REGEX + build + "$", "$1");
+			sep = tag.replaceFirst("^.+(" + BUILD_SEPARATOR_REGEX + ")" + build + "$", "$1");
 		} else {
 			build = "";
 			versionOrBranch = tag;
