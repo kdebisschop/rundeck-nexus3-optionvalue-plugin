@@ -300,6 +300,20 @@ public class Nexus3OptionProviderTest {
 	}
 
 	@Test
+	public void handlesTagsWithoutBuildSpecifier() throws IOException {
+		when(client.newCall(any())).thenReturn(call);
+		String json = "{\"items\":[" + item("v141.1") + "," + item("rc141.1raft4711a") + "]}";
+		when(call.execute()).thenReturn(response(json));
+
+		Nexus3OptionProvider provider = new Nexus3OptionProvider(client);
+		List<OptionValue> options = provider.getOptionValues(configuration);
+
+		assertEquals(3, options.size());
+		assertEquals("COMP_NAME:rc141.1raft4711a", options.get(1).getName());
+		assertEquals("COMP_NAME:v141.1", options.get(0).getName());
+	}
+
+	@Test
 	public void sortsBuildNumbersNumerically() throws IOException {
 		when(client.newCall(any())).thenReturn(call);
 		String json = "{\"items\":[" + item("sprint_11-13") + "," + item("sprint_11-4") + "," + item("1.2.3-4") + ","
