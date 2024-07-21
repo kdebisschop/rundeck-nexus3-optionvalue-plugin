@@ -32,7 +32,7 @@ public class Nexus3OptionProvider implements OptionValuesPlugin {
 
 	public static final String PLUGIN_NAME = "Nexus3OptionProvider";
 
-	private OkHttpClient client;
+	private final OkHttpClient client;
 
 	@PluginProperty(title = "Endpoint scheme", description = "Nexus server scheme", required = true, defaultValue = "https", scope = PropertyScope.Project)
 	private String endpointScheme;
@@ -89,7 +89,7 @@ public class Nexus3OptionProvider implements OptionValuesPlugin {
 	private void setVariable(Map configuration, String variableName, String variable) {
 		if (configuration.containsKey(variableName)) {
 			config.put(variableName, configuration.get(variableName).toString());
-		} else  if (variable != null && variable.length() > 0) {
+		} else  if (variable != null && !variable.isEmpty()) {
 			config.put(variableName, variable);
 		}
 	}
