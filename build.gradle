@@ -12,7 +12,6 @@ sonarqube {
         property "sonar.projectKey", "kdebisschop_rundeck-nexus3-optionvalue-plugin"
         property "sonar.organization", "kdebisschop"
         property "sonar.host.url", "https://sonarcloud.io"
-        property "sonar.login", "807fd8589d7244bd324b5fecdfca9614d8a40c8c"
     }
 }
 
@@ -79,8 +78,10 @@ configurations{
 }
 
 gradle.projectsEvaluated {
-    tasks.withType(JavaCompile) {
-        options.compilerArgs << "-Xlint:unchecked"
+    tasks.withType(JavaCompile).tap {
+        configureEach {
+            options.compilerArgs << "-Xlint:unchecked"
+        }
     }
 }
 
@@ -98,7 +99,7 @@ dependencies {
 }
 
 // Task to copy plugin libs to output/lib dir
-task copyToLib(type: Copy) {
+tasks.register('copyToLib', Copy) {
     into "$buildDir/output/lib"
     from configurations.pluginLibs
 }
@@ -125,11 +126,11 @@ jar {
     dependsOn(copyToLib)
 }
 
-task sourceJar(type: Jar) {
+tasks.register('sourceJar', Jar) {
     from sourceSets.main.allJava
 }
 
-task javadocJar(type: Jar) {
+tasks.register('javadocJar', Jar) {
     from javadoc.destinationDir
 }
 
