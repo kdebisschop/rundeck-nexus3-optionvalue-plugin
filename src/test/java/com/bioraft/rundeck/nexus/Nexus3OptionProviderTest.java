@@ -269,17 +269,18 @@ public class Nexus3OptionProviderTest {
 	public void returnsFourItemsForOneBranchAndTwoSemanticReleases() throws IOException {
 		when(client.newCall(any())).thenReturn(call);
 		String json = "{\"items\":[" + item("sprint-11_3") + "," + item("sprint-11_4") + "," + item("v1.2.3_4") + ","
-				+ item("v1.2.2_1") + "," + item("v1.2.3_3") + "," + item("v1.2.2_2") + "]}";
+				+ item("v1.2.2_1") + "," + item("v1.2.3_3") + "," + item("v1.2.2_2") + "," + item("20240720.0") + "]}";
 		when(call.execute()).thenReturn(response(json));
 
 		Nexus3OptionProvider provider = new Nexus3OptionProvider(client);
 		List<OptionValue> options = provider.getOptionValues(configuration);
 
-		assertEquals(4, options.size());
-		assertEquals("COMP_NAME:v1.2.3_4", options.get(0).getName());
+		assertEquals(5, options.size());
+		assertEquals("COMP_NAME:20240720.0", options.get(0).getName());
 		assertEquals("COMP_NAME:sprint-11_4", options.get(1).getName());
 		assertEquals("COMP_NAME:v1.2.2_2", options.get(2).getName());
 		assertEquals("COMP_NAME:v1.2.3_4", options.get(3).getName());
+		assertEquals("COMP_NAME:20240720.0", options.get(4).getName());
 	}
 
 	@Test
@@ -302,15 +303,16 @@ public class Nexus3OptionProviderTest {
 	@Test
 	public void handlesTagsWithoutBuildSpecifier() throws IOException {
 		when(client.newCall(any())).thenReturn(call);
-		String json = "{\"items\":[" + item("v141.1") + "," + item("rc141.1raft4711a") + "]}";
+		String json = "{\"items\":[" + item("v141.1") + "," + item("rc141.1") + "]}";
 		when(call.execute()).thenReturn(response(json));
 
 		Nexus3OptionProvider provider = new Nexus3OptionProvider(client);
 		List<OptionValue> options = provider.getOptionValues(configuration);
 
 		assertEquals(3, options.size());
-		assertEquals("COMP_NAME:rc141.1raft4711a", options.get(1).getName());
 		assertEquals("COMP_NAME:v141.1", options.get(0).getName());
+		assertEquals("COMP_NAME:rc141.1", options.get(1).getName());
+		assertEquals("COMP_NAME:v141.1", options.get(2).getName());
 	}
 
 	@Test
@@ -334,9 +336,9 @@ public class Nexus3OptionProviderTest {
 	public void sortsIssuesNumerically() throws IOException {
 		when(client.newCall(any())).thenReturn(call);
 		String json = "{\"items\":[" + item("sprint_11-13") + "," + item("sprint_11-4") + "," + item("1.2.3-4") + ","
-				+ item("1.2.2-21") + "," + item("1.2.3-11") + "," + item("ISSUE-234-one-issue-2") + ","
-				+ item("ISSUE-234-one-issue-12") + "," + item("ISSUE-1000-another-issue-27") + ","
-				+ item("ISSUE-1000-another-issue-13") + "," + item("1.2.2-2") + "]}";
+				+ item("1.2.2-21") + "," + item("1.2.3-11") + "," + item("ISSUE-1000-another-issue-27") + ","
+				+ item("ISSUE-1000-another-issue-13") + "," + item("ISSUE-234-one-issue-2") + ","
+				+ item("ISSUE-234-one-issue-12") + ","  + item("1.2.2-2") + "]}";
 		when(call.execute()).thenReturn(response(json));
 
 		Nexus3OptionProvider provider = new Nexus3OptionProvider(client);

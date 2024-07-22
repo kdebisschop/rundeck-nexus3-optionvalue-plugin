@@ -12,7 +12,6 @@ sonarqube {
         property "sonar.projectKey", "kdebisschop_rundeck-nexus3-optionvalue-plugin"
         property "sonar.organization", "kdebisschop"
         property "sonar.host.url", "https://sonarcloud.io"
-        property "sonar.login", "807fd8589d7244bd324b5fecdfca9614d8a40c8c"
     }
 }
 
@@ -30,8 +29,8 @@ apply plugin: 'eclipse'
 apply plugin: 'idea'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 defaultTasks 'clean','build'
@@ -40,8 +39,8 @@ group = 'com.github.kdebisschop'
 
 ext.rundeckPluginVersion = '1.2'
 ext.pluginClassNames='com.bioraft.rundeck.nexus.Nexus3OptionProvider'
-ext.pluginName = 'Nexus3 Option Values Porvider'
-ext.pluginDescription = 'Fetches and filters assests from a Nexus3 repository'
+ext.pluginName = 'Nexus3 Option Values Provider'
+ext.pluginDescription = 'Fetches and filters assets from a Nexus3 repository'
 
 scmVersion {
     ignoreUncommittedChanges = true
@@ -65,7 +64,6 @@ scmVersion {
 project.version = scmVersion.version
 
 repositories {
-    mavenLocal()
     mavenCentral()
 }
 
@@ -80,15 +78,18 @@ configurations{
 }
 
 gradle.projectsEvaluated {
-    tasks.withType(JavaCompile) {
-        options.compilerArgs << "-Xlint:unchecked"
+    tasks.withType(JavaCompile).tap {
+        configureEach {
+            options.compilerArgs << "-Xlint:unchecked"
+        }
     }
 }
 
 dependencies {
-    implementation 'org.rundeck:rundeck-core:3.4.10-20220118'
+    implementation 'org.rundeck:rundeck-core:5.4.0-20240618'
+    implementation 'org.apache.maven:maven-artifact:3.9.8'
 
-    testImplementation group: 'junit', name: 'junit', version:'4.12'
+    testImplementation group: 'junit', name: 'junit', version: '4.13.1'
 
     testImplementation (
         'org.mockito:mockito-all:1.10.19',
@@ -98,7 +99,7 @@ dependencies {
 }
 
 // Task to copy plugin libs to output/lib dir
-task copyToLib(type: Copy) {
+tasks.register('copyToLib', Copy) {
     into "$buildDir/output/lib"
     from configurations.pluginLibs
 }
@@ -125,11 +126,11 @@ jar {
     dependsOn(copyToLib)
 }
 
-task sourceJar(type: Jar) {
+tasks.register('sourceJar', Jar) {
     from sourceSets.main.allJava
 }
 
-task javadocJar(type: Jar) {
+tasks.register('javadocJar', Jar) {
     from javadoc.destinationDir
 }
 

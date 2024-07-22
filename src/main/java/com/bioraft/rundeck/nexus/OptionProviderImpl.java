@@ -31,7 +31,7 @@ import okhttp3.Request.Builder;
  * Expands three-part semantic versions to handle cases where there are more
  * than 3 parts and where build specifier may be attached by "_" or "+".
  *
- * It would really just be better if people only used semantic versions.
+ * <p>It would really just be better if people only used semantic versions.
  *
  * @author Karl DeBisschop <kdebisschop@gmail.com>
  * @since 2019-12-26
@@ -40,7 +40,7 @@ public class OptionProviderImpl {
 
 	static final String CONTINUATION_TOKEN = "continuationToken";
 
-	private OkHttpClient client;
+	private final OkHttpClient client;
 
 	private Map<String, String> config;
 
@@ -105,12 +105,13 @@ public class OptionProviderImpl {
 
 	/**
 	 * Update the Branches Map.
+	 *
 	 * @param current The branch or version object we are considering.
 	 * @param versionOrBuild The version or build of the object we are considering.
 	 */
 	private void updateBranchOrVersionMap(BranchOrVersion current, String versionOrBuild, Map<String, BranchOrVersion> map) {
 		// If we are already tracking the branch, check to ensure this is newer before saving.
-		// Otherwise, it is a new branc to us so start tracking it.
+		// Otherwise, it is a new branch to us so start tracking it.
 		if (map.containsKey(versionOrBuild)) {
 			if (current.compareTo(map.get(versionOrBuild)) > 0) {
 				map.put(versionOrBuild, current);
@@ -135,10 +136,7 @@ public class OptionProviderImpl {
 	}
 
 	/**
-	 * Perform the Nexus API request.
-	 *
-	 * This is really just syntactic sugar for the initial request (with no
-	 * continuation token). But it adds some clarity.
+	 * Perform the initial Nexus API request.
 	 *
 	 * @return An ArrayList of path strings.
 	 */
@@ -149,7 +147,7 @@ public class OptionProviderImpl {
 	/**
 	 * Perform the Nexus API request, including continuation for larger result sets.
 	 *
-	 * Since all we need to prepare the option list is path, extract that from the
+	 * <p>Since all we need to prepare the option list is path, extract that from the
 	 * JsonNode and return just a list of strings in the interest of conserving
 	 * system resources.
 	 *
@@ -179,7 +177,7 @@ public class OptionProviderImpl {
 				return new ArrayList<>();
 			}
 			json = body.string();
-			if (json.length() == 0) {
+			if (json.isEmpty()) {
 				return new ArrayList<>();
 			}
 		} catch (NullPointerException | IOException e) {
@@ -198,7 +196,7 @@ public class OptionProviderImpl {
 		}
 		if (tree.has(CONTINUATION_TOKEN)) {
 			String token = tree.path(CONTINUATION_TOKEN).asText();
-			if (token.length() > 0) {
+			if (!token.isEmpty()) {
 				ArrayList<String> nextItems = nexusSearch(token);
 				itemList.addAll(nextItems);
 			}
@@ -225,8 +223,8 @@ public class OptionProviderImpl {
 	/**
 	 * Provides a means of informing users that the Nexus host still needs to be
 	 * configured.
-	 * 
-	 * All methods are straightforward implementations of the interface.
+	 *
+	 * <p>All methods are straightforward implementations of the interface.
 	 */
 	static class ErrorOptionValue implements OptionValue {
 		String name;
