@@ -37,9 +37,9 @@ public class BranchOrVersionTest {
 		runTest(COMPONENT, "0.1.2", "_", "3");
 		runTest(COMPONENT, "1.2.1.2", "-", "4");
 		runTest(COMPONENT, "v1.2.1.5", "-", "6");
-		runTest(COMPONENT, "v2.2.1.", "_", "16");
-		runTest(COMPONENT, "v2.2.0.", "_", "beta6");
-		runTest(COMPONENT, "v2.2.0.", "+", "alpha1");
+		runTest(COMPONENT, "v2.2.1", "_", "16");
+		runTest(COMPONENT, "v2.2.0", "_", "beta6");
+		runTest(COMPONENT, "v2.2.0", "+", "alpha1");
 		runTest(COMPONENT, "", "", "");
 	}
 
