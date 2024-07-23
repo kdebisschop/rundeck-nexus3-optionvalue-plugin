@@ -96,7 +96,7 @@ public class BranchOrVersion {
 	 * Anything else is considered to be a branch.
 	 */
 	public boolean isVersion() {
-		return versionOrBranch.matches(".*\\d+[.]\\d+.*");
+		return versionOrBranch.matches("^(v|rc)?\\d+[.]\\d+.*");
 	}
 
 	/**
@@ -133,7 +133,7 @@ public class BranchOrVersion {
 	 * string-valued.
 	 */
 	private String tag(String path) {
-		return path.replaceAll(".*/", "");
+		return path.replaceAll("/?[^/]*/", "");
 	}
 
 }
