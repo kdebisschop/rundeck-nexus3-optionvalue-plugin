@@ -47,26 +47,7 @@ ext.pluginClassNames='com.bioraft.rundeck.nexus.Nexus3OptionProvider'
 ext.pluginName = 'Nexus3 Option Values Provider'
 ext.pluginDescription = 'Fetches and filters assets from a Nexus3 repository'
 
-//scmVersion {
-//    ignoreUncommittedChanges = true
-//    tag {
-//        // Ignore tags that begin with <prefix><versionSeparator>, include all tags
-//        // if prefix is empty.
-//        prefix = ''
-//        versionSeparator = ''
-//
-//        // Append .0 to satisfy SemVer if the tag version is only X.Y
-//        def origDeserialize = deserialize
-//        deserialize = { config, position, tagName ->
-//            String orig = origDeserialize(config, position, tagName)
-//            if (orig.split('\\.').length < 3) {
-//                orig += ".0"
-//            }
-//            orig
-//        }
-//    }
-//}
-project.version = scmVersion.version
+version = scmVersion.version
 
 repositories {
     mavenCentral()
