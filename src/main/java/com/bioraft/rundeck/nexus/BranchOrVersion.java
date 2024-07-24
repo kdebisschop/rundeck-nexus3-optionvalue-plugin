@@ -96,7 +96,7 @@ public class BranchOrVersion {
 	 * Anything else is considered to be a branch.
 	 */
 	public boolean isVersion() {
-		return versionOrBranch.matches("^(v|rc)?\\d+[.]\\d+?.*+");
+		return versionOrBranch.matches("^(v|rc)?\\d+[.]\\d+?.*+$");
 	}
 
 	/**
