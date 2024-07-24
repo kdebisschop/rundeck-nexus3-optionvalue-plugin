@@ -133,11 +133,13 @@ publishing {
     }
     publications {
         gpr(MavenPublication) {
-            from(components.java)
+            version = '0.9.5'
+
+            from components.java
         }
     }
 }
 
 wrapper {
-    gradleVersion = '6.2'
+    gradleVersion = '7.6'
 }
